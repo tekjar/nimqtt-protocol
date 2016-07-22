@@ -1,0 +1,5 @@
+illformed AST: case control
+illformed AST: case ConnectType(control: of CONNECT.ord())
+illformed AST: case ConnectType(control: of CONNECT.ord())
+illformed AST: case ConnectType(control: of CONNECT.ord())
+illformed AST: case control
