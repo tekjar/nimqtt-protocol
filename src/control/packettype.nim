@@ -24,7 +24,7 @@ type
 proc newPacketType(control: ControlType, flags: uint8): PacketType =
   PacketType(control: control, flags: flags)
 
-proc newPacketType(packed: uint8): PacketType =
+proc newPacketType*(packed: uint8): PacketType =
   var control = ControlType(packed shr 4)
   var flags =  packed and 0x0F
 
@@ -77,5 +77,5 @@ proc newPacketType(packed: uint8): PacketType =
 ##
 ## Encode based on control type and flags
 ##
-proc pack(self: PacketType): uint8 =
+proc pack*(self: PacketType): uint8 =
   uint8(self.control.ord() shl 4) or (self.flags and 0x0F)
