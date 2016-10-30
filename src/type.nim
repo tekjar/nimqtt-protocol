@@ -78,7 +78,7 @@ proc default*(control: Packet): byte =
             result = 0
 
 ##
-## Encode based on control type and flags
+## Encode control packet and flags into a single byte
 ##
 proc pack*(self: Control , flags: uint8): uint8 =
     let control = self.ord()

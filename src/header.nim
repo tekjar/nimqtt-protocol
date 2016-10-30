@@ -12,7 +12,7 @@ const maxRemainingLength: uint32 = 268435455 #bytes, or 256 MB
 ## +--------------------------+--------------------------+
 ## | MQTT Control Packet Type | Flags for each type      |
 ## +--------------------------+--------------------------+
-## | Remaining Length ...                                |
+## |                  Remaining Length                   |
 ## +-----------------------------------------------------+
 ## ```
 type
