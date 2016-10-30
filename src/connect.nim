@@ -61,7 +61,7 @@ import sequtils
 ##
 
 
-#const BYTES_MQTT311: seq[byte] = toSeq("MQTT".items)
+const BYTES_MQTT311: seq[byte] = toSeq("MQTT".items)
 const MQTT311: byte = 4
 
 type ConnectPacket* = ref object
@@ -71,7 +71,20 @@ type ConnectPacket* = ref object
   password: string
   cleanSession: bool
   will: Message
-  version: byte 
+  version: byte
+
+proc newConnectPacket*(clientId: string, keepAlive: uint16 = 10,
+                      userName = "", password = "",
+                      cleanSession = true, will: Message = nil): ConnectPacket =
+  ConnectPacket(
+        clientId: clientId,
+        keepAlive: keepAlive,
+        userName: userName,
+        password: password,
+        cleanSession: cleanSession,
+        will: will,
+        version: 4
+  )
 
 #
 # Variable header length for CONNECT packet
