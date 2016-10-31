@@ -17,11 +17,12 @@ const maxRemainingLength: uint32 = 268435455 #bytes, or 256 MB
 ## ```
 type
   FixedHeader* = ref object
-    control: Control
+    control*: Control
     # The Remaining Length is the number of bytes remaining within the current packet,
     # including data in the variable header and the payload. The Remaining Length does
     # not include the bytes used to encode the Remaining Length.
-    remainingLen: uint32
+    remainingLen*: uint32
+
 
 ## Calculate header length from remaining length
 proc headerLen*(remainingLen: uint32): uint32 =
@@ -36,6 +37,11 @@ proc headerLen*(remainingLen: uint32): uint32 =
       1
   remSize + 1
 
+proc newFixedHeader*(control: Control): FixedHeader =
+  FixedHeader(
+    control: control,
+    remainingLen: 0
+  )
 
 proc encode*(self: FixedHeader, flags: uint8): seq[byte] =
   result = newSeq[byte](0)
@@ -57,7 +63,7 @@ proc encode*(self: FixedHeader, flags: uint8): seq[byte] =
     if curLen == 0:
       break
 
-proc decode*(e: seq[byte]): FixedHeader =
+proc decodeFixed*(e: seq[byte]): FixedHeader =
   var e = e
   e.reverse()
 
@@ -82,49 +88,49 @@ when isMainModule:
   block:
     var header = FixedHeader(control: CONNECT, remainingLen: 0)
     var e = header.encode(0)
-    doAssert e.decode().control == header.control
+    doAssert e.decodeFixed().control == header.control
   block:
     var header = FixedHeader(control: CONNACK, remainingLen: 0)
     var e = header.encode(0)
-    doAssert e.decode().control == header.control
+    doAssert e.decodeFixed().control == header.control
   block:
     var header = FixedHeader(control: PUBLISH, remainingLen: 0)
     var e = header.encode(0)
-    doAssert e.decode().control == header.control
+    doAssert e.decodeFixed().control == header.control
   block:
     var header = FixedHeader(control: PUBACK, remainingLen: 0)
     var e = header.encode(0)
-    doAssert e.decode().control == header.control
+    doAssert e.decodeFixed().control == header.control
   block:
     var header = FixedHeader(control: PUBREC, remainingLen: 0)
     var e = header.encode(0)
-    doAssert e.decode().control == header.control
+    doAssert e.decodeFixed().control == header.control
   block:
     var header = FixedHeader(control: PUBREL, remainingLen: 0)
     var e = header.encode(0)
-    doAssert e.decode().control == header.control
+    doAssert e.decodeFixed().control == header.control
   block:
     var header = FixedHeader(control: PUBCOMP, remainingLen: 0)
     var e = header.encode(0)
-    doAssert e.decode().control == header.control
+    doAssert e.decodeFixed().control == header.control
   block:
     var header = FixedHeader(control: SUBSCRIBE, remainingLen: 0)
     var e = header.encode(0)
-    doAssert e.decode().control == header.control
+    doAssert e.decodeFixed().control == header.control
   block:
     var header = FixedHeader(control: SUBACK, remainingLen: 0)
     var e = header.encode(0)
-    doAssert e.decode().control == header.control
+    doAssert e.decodeFixed().control == header.control
   block:
     var header = FixedHeader(control: PINGREQ, remainingLen: 0)
     var e = header.encode(0)
-    doAssert e.decode().control == header.control
+    doAssert e.decodeFixed().control == header.control
   block:
     var header = FixedHeader(control: PINGRESP, remainingLen: 0)
     var e = header.encode(0)
-    doAssert e.decode().control == header.control
+    doAssert e.decodeFixed().control == header.control
   block:
     var header = FixedHeader(control: DISCONNECT, remainingLen: 0)
     var e = header.encode(0)
-    doAssert e.decode().control == header.control
+    doAssert e.decodeFixed().control == header.control
 

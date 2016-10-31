@@ -8,7 +8,7 @@ proc toSeq2(s: string): seq[byte] =
 
 
 
-proc toString(s: seq[byte]): string =
+proc toString*(s: seq[byte]): string =
   result = ""
   for x in s:
     result.add char(x)
@@ -53,6 +53,6 @@ proc decodeNextStrPayload*(ePayload: seq[byte]): string =
 
 when isMainModule:
   block:
-    var e = "hello".encodePayload()
+    var e = "hellooooooooooooo".encodePayload()
     var d = e.decodeNextPayload()
-    doAssert "hello" == d.toString
+    doAssert "hellooooooooooooo" == d.toString
