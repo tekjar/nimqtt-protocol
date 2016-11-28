@@ -6,7 +6,6 @@ type
 
 type Packet* = byte
 
-
 proc toString*(t: Packet): string =
     var control = Control(t)
     case control:

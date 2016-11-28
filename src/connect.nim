@@ -65,7 +65,6 @@ import sequtils
 const MQTT311: byte = 4
 
 type ConnectPacket* = ref object
-  fixedHeader: FixedHeader
   clientId: string
   keepAlive: uint16
   userName: string
@@ -108,8 +107,7 @@ proc remainingLen(connect: ConnectPacket): uint32 =
 proc newConnectPacket*(clientId: string, keepAlive: uint16 = 10,
                       userName = "", password = "",
                       cleanSession = true, will: Message = nil): ConnectPacket =
-  result = ConnectPacket(
-        fixedHeader: newFixedHeader(CONNECT),
+  result = ConnectPacket( 
         clientId: clientId,
         keepAlive: keepAlive,
         userName: userName,
@@ -118,24 +116,21 @@ proc newConnectPacket*(clientId: string, keepAlive: uint16 = 10,
         will: will,
         version: 4
   )
-  result.fixedHeader.remainingLen = result.remainingLen()
-
 
 
 proc encode*(connect: ConnectPacket): seq[byte] =
   result = newSeq[byte]()
 
-  # Encodeing fixed header (includes remaining length of var header + payload)
-  result.add(connect.fixedHeader.encode(0))
-
+  let fixedHeader = newFixedHeader(CONNECT)
+  fixedHeader.remainingLen = connect.remainingLen()  
+  # Encoding fixed header (includes remaining length of var header + payload)
+  result.add(fixedHeader.encode(0))
   # Encoding version string. This is similar to payload encoding
   result.add("MQTT".encodePayload())
-
   # Encode protocol version
   result.add(connect.version)
 
   # Create connect flags
-
   var connectFlags: byte = 0
 
   if len(connect.userName) > 0:
@@ -154,10 +149,9 @@ proc encode*(connect: ConnectPacket): seq[byte] =
     if len(connect.will.topic) == 0:
       raise newException(OsError, "Will flag is set but will topic is empty")
 
-    #TODO: Do Qos validation
-
+    # Encode Will QoS
     connectFlags = (connectFlags and 0b1100_0111) or (connect.will.qos shl 3)
-
+    # Encode Will Retain
     if connect.will.retain:
       connectFlags = connectFlags or 0b0010_0000
     else:
@@ -169,7 +163,7 @@ proc encode*(connect: ConnectPacket): seq[byte] =
   if connect.cleanSession:
     connectFlags = connectFlags or 0b0000_0010
   else:
-    connectFlags = connectFlags or 0b1111_1101
+    connectFlags = connectFlags and 0b1111_1101
 
   # Set reserve bit to 0
   connectFlags = connectFlags and 0b1111_1110
@@ -203,7 +197,6 @@ proc decodeConnect*(connect: seq[byte]): ConnectPacket =
     var protoName = connect[2..^1].decodeNextPayload()
     var protoVersion = connect[8]
     var connectFlags = connect[9]
-    echo connectFlags
 
     # read flags
     let usernameFlag = ((connectFlags shr 7) and 0x1) == 1
@@ -216,42 +209,32 @@ proc decodeConnect*(connect: seq[byte]): ConnectPacket =
     if (connectFlags and 0x01) != 0:
       raise newException(OsError, "Reserve bit should be 0")
 
-    #TODO: Validate QoS
-    if willFlag:
-      var qos = willQOS
-      var retain = willRetain
-
     if usernameFlag == false and passwordFlag == true:
       raise newException(OsError, "User name flag not set but Password flag set")
 
     var keepAlive = uint16(connect[10] shl 8) or uint16(connect[11])
-    echo keepAlive
 
+    var next = 12
     var clientId = connect[12..^1].decodeNextPayload()
-    echo payload.toString clientId
+    next += 2 + len(clientId)
 
-    var next = 2 + len(clientId) - 1
-
+    var will: Message
     if willFlag:
         var topic = connect[next..^1].decodeNextPayload()
-        echo payload.toString topic
-        next = 2 + len(topic) - 1
+        next += 2 + len(topic)
         var load = connect[next..^1].decodeNextPayload()
-        echo payload.toString load
-        next = 2 + len(load) - 1
+        next += 2 + len(load)
+        will = Message(topic: topic.toString, payload: load, qos: willQOS, retain: willRetain)
 
-
+    var username: string
     if usernameFlag:
-        echo connect[next..^1]
-        var userName = connect[next..^1].decodeNextPayload()
-        echo payload.toString userName
-        next = 2 + len(userName) - 1
-
+        username = connect[next..^1].decodeNextPayload().toString
+        next += 2 + len(userName)
+    var password: string
     if passwordFlag:
-        var password = connect[next..^1].decodeNextPayload()
-        echo payload.toString password
+        password = connect[next..^1].decodeNextPayload().toString
 
-    
+    result = newConnectPacket(clientId.toString, keepAlive, username, password, cleanSession, will)
 
 
 when isMainModule:
@@ -259,6 +242,25 @@ when isMainModule:
       var connect = newConnectPacket("new-id", 25, "hello", "world", false)
       let e = connect.encode()
       let d = e.decodeConnect()
+      doAssert d.clientId == "new-id"
+      doAssert d.keepAlive == 25
+      doAssert d.userName == "hello"
+      doAssert d.password == "world"
+      doAssert d.will == nil
+
+  block:
+      var will = Message(topic: "good/bye", payload: "take care".toSeq2, qos: 2, retain: true) 
+      var connect = newConnectPacket("new-id", 25, "hello", "world", false, will)
+      let e = connect.encode()
+      let d = e.decodeConnect()
+      doAssert d.clientId == "new-id"
+      doAssert d.keepAlive == 25
+      doAssert d.userName == "hello"
+      doAssert d.password == "world"
+      doAssert d.will.topic == will.topic
+      doAssert d.will.payload == will.payload
+      doAssert d.will.qos == will.qos
+      doAssert d.will.retain == will.retain
 
 
 

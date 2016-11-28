@@ -1,7 +1,7 @@
 const MAXPAYLOADSIZE = 65535
 
 
-proc toSeq2(s: string): seq[byte] =
+proc toSeq2*(s: string): seq[byte] =
   result = @[]
   for x in s:
     result.add byte(x)
@@ -41,7 +41,6 @@ proc decodeNextPayload*(ePayLoad: seq[byte]): seq[byte] =
 
   result = newSeq[byte]()
   let payloadLen = (uint16(ePayLoad[0]) shl 8) or uint16(ePayLoad[1])
-
   for b in ePayLoad[2..2 + int(payloadLen - 1)]:
     result.add(b)
 
