@@ -76,33 +76,33 @@ type ConnectPacket* = ref object
 #
 # Variable header + payload length for CONNECT packet
 proc remainingLen(connect: ConnectPacket): uint32 =
-  var total: int = 0
+    var total: int = 0
 
-  # 2 bytes protocol name length
-  # 4 bytes protocol name
-  # 1 byte protocol version
-  total += 2 + 4 + 1
+    # 2 bytes protocol name length
+    # 4 bytes protocol name
+    # 1 byte protocol version
+    total += 2 + 4 + 1
 
-  # 1 byte connect flags
-  # 2 bytes keep_alive
-  total += 1 + 2
+    # 1 byte connect flags
+    # 2 bytes keep_alive
+    total += 1 + 2
 
-  # Client ID length (2 bytes) + Client Id
-  total += 2 + len(connect.clientId)
+    # Client ID length (2 bytes) + Client Id
+    total += 2 + len(connect.clientId)
 
-  # add the will topic and will message length
-  if connect.will != nil:
-    total += 2 + len(connect.will.topic) + 2 + len(connect.will.payload)
+    # add the will topic and will message length
+    if connect.will != nil:
+        total += 2 + len(connect.will.topic) + 2 + len(connect.will.payload)
 
-  # username length
-  if len(connect.userName) > 0:
-    total += 2 + len(connect.userName)
+    # username length
+    if len(connect.userName) > 0:
+        total += 2 + len(connect.userName)
 
-  # password length
-  if len(connect.password) > 0:
-    total += 2 + len(connect.password)
+    # password length
+    if len(connect.password) > 0:
+        total += 2 + len(connect.password)
 
-  result = uint32(total)
+    result = uint32(total)
 
 proc newConnectPacket*(clientId: string, keepAlive: uint16 = 10,
                       userName = "", password = "",
@@ -119,78 +119,80 @@ proc newConnectPacket*(clientId: string, keepAlive: uint16 = 10,
 
 
 proc encode*(connect: ConnectPacket): seq[byte] =
-  result = newSeq[byte]()
+    result = newSeq[byte]()
 
-  let fixedHeader = newFixedHeader(CONNECT)
-  fixedHeader.remainingLen = connect.remainingLen()  
-  # Encoding fixed header (includes remaining length of var header + payload)
-  result.add(fixedHeader.encode(0))
-  # Encoding version string. This is similar to payload encoding
-  result.add("MQTT".encodePayload())
-  # Encode protocol version
-  result.add(connect.version)
+    let fixedHeader = newFixedHeader(CONNECT)
+    fixedHeader.remainingLen = connect.remainingLen()  
+    # Encoding fixed header (includes remaining length of var header + payload)
+    result.add(fixedHeader.encode(0))
+    # Encoding version string. This is similar to payload encoding
+    result.add("MQTT".encodePayload())
+    # Encode protocol version
+    result.add(connect.version)
 
-  # Create connect flags
-  var connectFlags: byte = 0
+    # Create connect flags
+    var connectFlags: byte = 0
 
-  if len(connect.userName) > 0:
-    connectFlags = connectFlags or 0b1000_0000
-  else:
-    connectFlags = connectFlags and 0b0111_1111
-
-  if len(connect.password) > 0:
-    connectFlags = connectFlags or 0b0100_0000
-  else:
-    connectFlags = connectFlags and 0b1011_1111
-
-  if connect.will != nil:
-    connectFlags = connectFlags or 0b0000_0100
-
-    if len(connect.will.topic) == 0:
-      raise newException(OsError, "Will flag is set but will topic is empty")
-
-    # Encode Will QoS
-    connectFlags = (connectFlags and 0b1100_0111) or (connect.will.qos shl 3)
-    # Encode Will Retain
-    if connect.will.retain:
-      connectFlags = connectFlags or 0b0010_0000
+    # Encode UserName
+    if len(connect.userName) > 0:
+        connectFlags = connectFlags or 0b1000_0000
     else:
-      connectFlags = connectFlags and 0b1101_1111
-  else:
-    connectFlags = connectFlags and 0b1111_1011
+        connectFlags = connectFlags and 0b0111_1111
 
-  # Set clean session
-  if connect.cleanSession:
-    connectFlags = connectFlags or 0b0000_0010
-  else:
-    connectFlags = connectFlags and 0b1111_1101
+    # Encode Password
+    if len(connect.password) > 0:
+        connectFlags = connectFlags or 0b0100_0000
+    else:
+        connectFlags = connectFlags and 0b1011_1111
 
-  # Set reserve bit to 0
-  connectFlags = connectFlags and 0b1111_1110
+    # Encode Will
+    if connect.will != nil:
+        connectFlags = connectFlags or 0b0000_0100
+        if len(connect.will.topic) == 0:
+            raise newException(OsError, "Will flag is set but will topic is empty")
 
-  # Add all the above encoded connect flags
-  result.add(connectFlags)
+        # Encode Will QoS
+        connectFlags = (connectFlags and 0b1100_0111) or (connect.will.qos shl 3)
+        # Encode Will Retain
+        if connect.will.retain:
+            connectFlags = connectFlags or 0b0010_0000
+        else:
+          connectFlags = connectFlags and 0b1101_1111
+    else:
+        connectFlags = connectFlags and 0b1111_1011
 
-  # Write keep alive
-  result.add(byte(connect.keepAlive shr 8))
-  result.add(byte(connect.keepAlive))
+    # Set clean session
+    if connect.cleanSession:
+        connectFlags = connectFlags or 0b0000_0010
+    else:
+        connectFlags = connectFlags and 0b1111_1101
 
-  # Start writing payload
+    # Set reserve bit to 0
+    connectFlags = connectFlags and 0b1111_1110
+
+    # Add all the above encoded connect flags
+    result.add(connectFlags)
+
+    # Write keep alive
+    result.add(byte(connect.keepAlive shr 8))
+    result.add(byte(connect.keepAlive))
+
+    # Start writing payload
   
-  # Write client id
-  result.add(connect.clientId.encodePayload())
+    # Write client id
+    result.add(connect.clientId.encodePayload())
 
-  if connect.will != nil:
-    result.add(connect.will.topic.encodePayload())
-    result.add(connect.will.payload.encodePayload())
+    if connect.will != nil:
+        result.add(connect.will.topic.encodePayload())
+        result.add(connect.will.payload.encodePayload())
 
-  if len(connect.userName) == 0 and len(connect.password) > 0:
-    raise newException(OsError, "Empty username but non empty password")
+    if len(connect.userName) == 0 and len(connect.password) > 0:
+        raise newException(OsError, "Empty username but non empty password")
 
-  if len(connect.userName) > 0:
-    result.add(connect.userName.encodePayload())
-  if len(connect.password) > 0:
-    result.add(connect.password.encodePayload())
+    if len(connect.userName) > 0:
+        result.add(connect.userName.encodePayload())
+    if len(connect.password) > 0:
+        result.add(connect.password.encodePayload())
 
 proc decodeConnect*(connect: seq[byte]): ConnectPacket =
     var fixedHeader = connect.decodeFixed()
@@ -207,10 +209,10 @@ proc decodeConnect*(connect: seq[byte]): ConnectPacket =
     let cleanSession = ((connectFlags shr 1) and 0x1) == 1
 
     if (connectFlags and 0x01) != 0:
-      raise newException(OsError, "Reserve bit should be 0")
+        raise newException(OsError, "Reserve bit should be 0")
 
     if usernameFlag == false and passwordFlag == true:
-      raise newException(OsError, "User name flag not set but Password flag set")
+        raise newException(OsError, "User name flag not set but Password flag set")
 
     var keepAlive = uint16(connect[10] shl 8) or uint16(connect[11])
 
