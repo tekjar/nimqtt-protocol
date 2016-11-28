@@ -108,13 +108,13 @@ proc newConnectPacket*(clientId: string, keepAlive: uint16 = 10,
                       userName = "", password = "",
                       cleanSession = true, will: Message = nil): ConnectPacket =
   result = ConnectPacket( 
-        clientId: clientId,
-        keepAlive: keepAlive,
-        userName: userName,
-        password: password,
-        cleanSession: cleanSession,
-        will: will,
-        version: 4
+      clientId: clientId,
+      keepAlive: keepAlive,
+      userName: userName,
+      password: password,
+      cleanSession: cleanSession,
+      will: will,
+      version: 4
   )
 
 
@@ -124,6 +124,7 @@ proc encode*(connect: ConnectPacket): seq[byte] =
     let fixedHeader = newFixedHeader(CONNECT)
     fixedHeader.remainingLen = connect.remainingLen()  
     # Encoding fixed header (includes remaining length of var header + payload)
+    # TODO: encode(0) ??? --> fixed header flags nibble
     result.add(fixedHeader.encode(0))
     # Encoding version string. This is similar to payload encoding
     result.add("MQTT".encodePayload())
