@@ -1,7 +1,7 @@
 import type, payload, header, message
 import sequtils
 
-## Fixed header for CONNECT PACKET
+## Fixed header for SUBSCRIBE PACKET
 ##
 ## 7                          3                          0
 ## +--------------------------+--------------------------+
@@ -20,7 +20,7 @@ import sequtils
 ## |                 Packet Identifier LSB               |   3
 ## +-----------------------------------------------------+
 ##
-## Payload: Set these optionals depending on CONNECT flags in variable header
+## Payload: Set these optionals
 ##
 ##     2 bytes subscribe topic length + subscribe topic + 1 byte qos
 ##
