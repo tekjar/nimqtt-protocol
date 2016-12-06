@@ -124,7 +124,7 @@ proc encode*(connect: ConnectPacket): seq[byte] =
     let fixedHeader = newFixedHeader(CONNECT)
     fixedHeader.remainingLen = connect.remainingLen()  
     # Encoding fixed header (includes remaining length of var header + payload)
-    # TODO: encode(0) ??? --> fixed header flags nibble
+    # encode(0) ??? --> fixed header flags nibble
     result.add(fixedHeader.encode(0))
     # Encoding version string. This is similar to payload encoding
     result.add("MQTT".encodePayload())
@@ -158,7 +158,7 @@ proc encode*(connect: ConnectPacket): seq[byte] =
         if connect.will.retain:
             connectFlags = connectFlags or 0b0010_0000
         else:
-          connectFlags = connectFlags and 0b1101_1111
+            connectFlags = connectFlags and 0b1101_1111
     else:
         connectFlags = connectFlags and 0b1111_1011
 
