@@ -21,7 +21,7 @@ import type, header
 
 type
   Ack* = enum
-    PUBACK = 4, PUBREC, PUBREL, PUBCOMP, SUBACK = 9, UNSUBACK = 11
+    PACK = 4, PREC, PREL, PCOMP, SACK = 9, USBACK = 11
 
 type AckPacket* = ref object
    pkid: uint16
@@ -58,7 +58,7 @@ proc decode*(ack: seq[byte]): AckPacket =
 
 when isMainModule:
   block:
-      var connect = newAckPacket(PUBACK, 100)
+      var connect = newAckPacket(PACK, 100)
       let e = connect.encode()
       let d = e.decode()
       doAssert d.pkid == connect.pkid

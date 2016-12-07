@@ -195,7 +195,7 @@ proc encode*(connect: ConnectPacket): seq[byte] =
     if len(connect.password) > 0:
         result.add(connect.password.encodePayload())
 
-proc decodeConnect*(connect: seq[byte]): ConnectPacket =
+proc decode*(connect: seq[byte]): ConnectPacket =
     var fixedHeader = connect.decodeFixed()
     var protoName = connect[2..^1].decodeNextPayload()
     var protoVersion = connect[8]

@@ -10,11 +10,14 @@ import type, header
 ## +-----------------------------------------------------+
 ##
 
-type PingResp* = ref object
+type PingrespPacket* = ref object
 
-proc encode*(pingreq: PingResp): seq[byte] =
+proc encode*(pingresp: PingrespPacket): seq[byte] =
    result = newSeq[byte]()
    let fixedHeader = newFixedHeader(type.PINGRESP)
    fixedHeader.remainingLen = 0 
    # Encoding fixed header (includes remaining length of var header + payload)
    result.add(fixedHeader.encode(0))
+
+proc decode*(pingresp: seq[byte]): PingrespPacket =
+   PingrespPacket()
