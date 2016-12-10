@@ -4,41 +4,40 @@ import net
 
 type 
    PacketKind = enum
-      c,
-      cack,
-      p,
-      pack,
-      prec,
-      prel,
-      pcom,
-      s,
-      sack,
-      preq,
-      pres
-    
-   Packet = ref object
-      case kind: PacketKind
-      of c:
+      kConnect,
+      kConnack,
+      kPublish,
+      kPuback,
+      kPubrec,
+      kPubrel,
+      kPubcomp,
+      kSubscribe,
+      kSuback,
+      kPingreq,
+      kPingresp
+   Packet = ref object 
+      case kind*: PacketKind
+      of kConnect:
          connect: ConnectPacket
-      of cack:
-         connack: ConnackPacket
-      of p:
+      of kConnack:
+         connack*: ConnackPacket
+      of kPublish:
          publish: PublishPacket
-      of pack:
+      of kPuback:
          puback: AckPacket
-      of prec:
+      of kPubrec:
          pubrec: AckPacket
-      of prel:
+      of kPubrel:
          pubrel: AckPacket
-      of pcom:
+      of kPubcomp:
          pubcomp: AckPacket
-      of s:
+      of kSubscribe:
          subscribe: SubscribePacket
-      of sack:
+      of kSuback:
          suback: AckPacket
-      of preq:
+      of kPingreq:
          pingreq: PingreqPacket
-      of pres:
+      of kPingresp:
          pingresp: PingrespPacket
 
 
@@ -46,85 +45,46 @@ proc packetDecode*(socket: Socket): Packet =
    let fixedHeaderRaw = socket.recv(2)
    let fixedHeader = decodeFixed(fixedHeaderRaw.toSeq2)
 
+   var buffer = newSeq[byte]()
+   buffer.add(fixedHeaderRaw.toSeq2)
+   let variableHeaderRaw = socket.recv(int(fixedHeader.remainingLen))
+   buffer.add(variableHeaderRaw.toSeq2)
+
    case fixedHeader.control
    of CONNECT:
-      var buffer = newSeq[byte]()
-      buffer.add(fixedHeaderRaw.toSeq2)
-      let variableHeaderRaw = socket.recv(int(fixedHeader.remainingLen))
-      buffer.add(variableHeaderRaw.toSeq2)
       let connect = connect.decode(buffer)
-      return Packet(kind: c, connect: connect)
+      return Packet(kind: kConnect, connect: connect)
    of CONNACK:
-      var buffer = newSeq[byte]()
-      buffer.add(fixedHeaderRaw.toSeq2)
-      let variableHeaderRaw = socket.recv(int(fixedHeader.remainingLen))
-      buffer.add(variableHeaderRaw.toSeq2)
       let connack = connack.decode(buffer)
-      return Packet(kind: cack, connack: connack)
+      return Packet(kind: kConnack, connack: connack)
    of PUBLISH:
-      var buffer = newSeq[byte]()
-      buffer.add(fixedHeaderRaw.toSeq2)
-      let variableHeaderRaw = socket.recv(int(fixedHeader.remainingLen))
-      buffer.add(variableHeaderRaw.toSeq2)
       let publish = publish.decode(buffer)
-      return Packet(kind: p, publish: publish)
+      return Packet(kind: kPublish, publish: publish)
    of PUBACK:
-      var buffer = newSeq[byte]()
-      buffer.add(fixedHeaderRaw.toSeq2)
-      let variableHeaderRaw = socket.recv(int(fixedHeader.remainingLen))
-      buffer.add(variableHeaderRaw.toSeq2)
       let puback = ack.decode(buffer)
-      return Packet(kind: pack, puback: puback)
+      return Packet(kind: kPuback, puback: puback)
    of PUBREC:
-      var buffer = newSeq[byte]()
-      buffer.add(fixedHeaderRaw.toSeq2)
-      let variableHeaderRaw = socket.recv(int(fixedHeader.remainingLen))
-      buffer.add(variableHeaderRaw.toSeq2)
       let pubrec = ack.decode(buffer)
-      return Packet(kind: prec, pubrec: pubrec)
+      return Packet(kind: kPubrec, pubrec: pubrec)
    of PUBREL:
-      var buffer = newSeq[byte]()
-      buffer.add(fixedHeaderRaw.toSeq2)
-      let variableHeaderRaw = socket.recv(int(fixedHeader.remainingLen))
-      buffer.add(variableHeaderRaw.toSeq2)
       let pubrel = ack.decode(buffer)
-      return Packet(kind: prel, pubrel: pubrel)
+      return Packet(kind: kPubrel, pubrel: pubrel)
    of PUBCOMP:
-      var buffer = newSeq[byte]()
-      buffer.add(fixedHeaderRaw.toSeq2)
-      let variableHeaderRaw = socket.recv(int(fixedHeader.remainingLen))
-      buffer.add(variableHeaderRaw.toSeq2)
       let pubcomp = ack.decode(buffer)
-      return Packet(kind: pcom, pubcomp: pubcomp)
+      return Packet(kind: kPubcomp, pubcomp: pubcomp)
    of SUBSCRIBE:
-      var buffer = newSeq[byte]()
-      buffer.add(fixedHeaderRaw.toSeq2)
-      let variableHeaderRaw = socket.recv(int(fixedHeader.remainingLen))
-      buffer.add(variableHeaderRaw.toSeq2)
       let subscribe = subscribe.decode(buffer)
-      return Packet(kind: s, subscribe: subscribe)
+      return Packet(kind: kSubscribe, subscribe: subscribe)
    of SUBACK:
-      var buffer = newSeq[byte]()
-      buffer.add(fixedHeaderRaw.toSeq2)
-      let variableHeaderRaw = socket.recv(int(fixedHeader.remainingLen))
-      buffer.add(variableHeaderRaw.toSeq2)
       let suback = ack.decode(buffer)
-      return Packet(kind: sack, suback: suback)
+      return Packet(kind: kSuback, suback: suback)
    of UNSUBSCRIBE, UNSUBACK:
       discard
    of PINGREQ:
-      var buffer = newSeq[byte]()
-      buffer.add(fixedHeaderRaw.toSeq2)
-      let variableHeaderRaw = socket.recv(int(fixedHeader.remainingLen))
-      buffer.add(variableHeaderRaw.toSeq2)
       let pingreq = pingreq.decode(buffer)
-      return Packet(kind: preq, pingreq: pingreq)
+      return Packet(kind: kPingreq, pingreq: pingreq)
    of PINGRESP:
-      var buffer = newSeq[byte]()
-      buffer.add(fixedHeaderRaw.toSeq2)
-      let variableHeaderRaw = socket.recv(int(fixedHeader.remainingLen))
-      buffer.add(variableHeaderRaw.toSeq2)
       let pingresp = pingresp.decode(buffer)
-      return Packet(kind: pres, pingresp: pingresp)
+      return Packet(kind: kPingresp, pingresp: pingresp)
    of DISCONNECT:
       discard

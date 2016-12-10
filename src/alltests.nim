@@ -9,5 +9,4 @@ test "can connect to broker":
    let cpackets = conn.encode()
    client.send(cpackets.toString)
    var r = packetDecode(client)
-   echo r.repr
-   echo "@@@@@@@@@@@@"
+   echo r.connack.repr
