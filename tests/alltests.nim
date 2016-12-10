@@ -1,5 +1,6 @@
-import connect, header, packet
-import payload
+import nimqtt.connect, nimqtt.header
+import nimqtt.payload
+import nimqtt
 import net, unittest
 
 test "can connect to broker":

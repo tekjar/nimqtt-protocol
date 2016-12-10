@@ -1,3 +1,5 @@
-*
-!*/
-!*.nim
+nimcache
+bin
+!**/nimqtt/*.nim
+!**/nimqtt/nim.cfg
+!**/tests/*.nim

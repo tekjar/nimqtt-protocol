@@ -1,5 +1,6 @@
-import connect, connack, publish, subscribe, ack, pingreq, pingresp
-import payload, type, header
+import nimqtt.connect, nimqtt.connack, nimqtt.publish
+import nimqtt.subscribe, nimqtt.ack, nimqtt.pingreq, nimqtt.pingresp
+import nimqtt.payload, nimqtt.type, nimqtt.header
 import net
 
 type 
